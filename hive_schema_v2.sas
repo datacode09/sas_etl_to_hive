@@ -2,16 +2,16 @@
 proc contents data=mydata.sas_dataset out=schema_metadata(keep=name type length format) noprint;
 run;
 
-/* Step 2: Build the Hive CREATE TABLE statement in parts */
-data _null_;
+/* Step 2: Build the Hive CREATE TABLE statement in parts and store in a dataset */
+data hive_query;
     /* Define the Hive schema, table name, and partition column */
+    length hive_create_query $1000; /* Adjust length as needed for larger queries */
     %let hive_schema = your_schema;           /* Replace with your Hive schema name */
     %let hive_table = your_hive_table;        /* Replace with your Hive table name */
     %let partition_column = RPT_PRD_END_DT;   /* Replace with the desired partition column */
 
-    /* Initialize the CREATE TABLE statement in macro variables */
-    call symputx('hive_create_query1', "CREATE TABLE IF NOT EXISTS &hive_schema..&hive_table (");
-    call symputx('hive_create_query2', '');
+    /* Initialize the CREATE TABLE statement */
+    hive_create_query = "CREATE TABLE IF NOT EXISTS &hive_schema..&hive_table (";
 
     /* Loop through each column and generate Hive-compatible column definitions */
     set schema_metadata end=last;
@@ -26,34 +26,31 @@ data _null_;
     end;
     else if type = 2 then hive_type = "STRING"; /* Character type */
 
-    /* Prepare column definition */
-    col_def = catx(' ', name, hive_type);
-
-    /* Append the column definition to the macro variable */
-    if _n_ = 1 then call symputx('hive_create_query2', trim(symget('hive_create_query2')) || col_def);
-    else call symputx('hive_create_query2', trim(symget('hive_create_query2')) || ', ' || col_def);
+    /* Append column definition */
+    if name ne "&partition_column" then do;
+        col_def = catx(' ', name, hive_type);
+        hive_create_query = catx(', ', hive_create_query, col_def);
+    end;
 
     /* Finalize main column definitions if it's the last row */
     if last then do;
-        call symputx('hive_create_query3', ') PARTITIONED BY (');
-        call symputx('hive_create_query4', catx(' ', "&partition_column", hive_type, ")"));
+        hive_create_query = catx('', hive_create_query, ") PARTITIONED BY (");
+        
+        /* Add PARTITIONED BY clause */
+        col_def = catx(' ', "&partition_column", hive_type);
+        hive_create_query = catx('', hive_create_query, col_def, ")");
         
         /* Add Hive-specific table options for row format and storage */
-        call symputx('hive_create_query5', "ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' STORED AS PARQUET;");
+        hive_create_query = catx('', hive_create_query, 
+                                 "ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' STORED AS PARQUET;");
+        
+        /* Output the final CREATE TABLE statement into the dataset */
+        output;
     end;
-
-    /* Optional: Print log of each column's mapping */
-    putlog 'NOTE: SAS Column=' name ', SAS Type=' type ', Length=' length ', Format=' format ' -> Hive Type=' hive_type;
 run;
 
-/* Step 3: Display the full query */
-%put &hive_create_query1 &hive_create_query2 &hive_create_query3 &hive_create_query4 &hive_create_query5;
-
-/* Step 4: Use the query in PROC SQL */
-proc sql;
-    connect to hadoop (your_hive_connection_options); /* Use your connection options */
-    execute (
-        &hive_create_query1 &hive_create_query2 &hive_create_query3 &hive_create_query4 &hive_create_query5
-    ) by hadoop;
-    disconnect from hadoop;
-quit;
+/* Step 3: View the generated Hive CREATE TABLE statement */
+proc print data=hive_query noobs;
+    var hive_create_query;
+    title "Generated Hive CREATE TABLE Statement";
+run;
