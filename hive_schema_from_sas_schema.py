@@ -31,11 +31,12 @@ df['Hive_Type'] = df.apply(map_to_hive_type, axis=1)
 # Start building the CREATE TABLE statement
 create_table_query = f"CREATE TABLE IF NOT EXISTS {schema_name}.{table_name} (\n"
 
-# Loop through each column to add it to the main schema
+# Loop through each column, excluding the partition column from the main schema
 for index, row in df.iterrows():
-    create_table_query += f"    {row['Name']} {row['Hive_Type']}"
-    if index < len(df) - 1:
-        create_table_query += ",\n"
+    if row['Name'] != partition_column:  # Exclude partition column from main schema
+        create_table_query += f"    {row['Name']} {row['Hive_Type']}"
+        if index < len(df) - 1:
+            create_table_query += ",\n"
 
 # Remove the trailing comma and newline if it exists
 create_table_query = create_table_query.rstrip(",\n") + "\n"
@@ -44,8 +45,8 @@ create_table_query = create_table_query.rstrip(",\n") + "\n"
 partition_type = df[df['Name'] == partition_column]['Hive_Type'].values[0]
 create_table_query += f")\nPARTITIONED BY (\n    {partition_column} {partition_type}\n)"
 
-# Specify row format and storage format
-create_table_query += "\nROW FORMAT DELIMITED\nFIELDS TERMINATED BY ','\nSTORED AS PARQUET;"
+# Specify row format and storage format with field terminator '\001'
+create_table_query += "\nROW FORMAT DELIMITED\nFIELDS TERMINATED BY '\\001'\nSTORED AS PARQUET;"
 
 # Print the full CREATE TABLE statement
 print("Generated Hive CREATE TABLE Statement:\n")
