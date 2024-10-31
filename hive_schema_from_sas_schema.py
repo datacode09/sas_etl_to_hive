@@ -51,3 +51,7 @@ create_table_query += "\nROW FORMAT DELIMITED\nFIELDS TERMINATED BY '\\001'\nSTO
 # Print the full CREATE TABLE statement
 print("Generated Hive CREATE TABLE Statement:\n")
 print(create_table_query)
+
+# Save the query to a text file
+with open(output_file_path, 'w') as file:
+    file.write(create_table_query)
