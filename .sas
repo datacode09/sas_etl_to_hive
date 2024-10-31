@@ -3,7 +3,7 @@
 
 /* Configure SAS options for Hadoop and RESTful interaction */
 options set=SAS_HADOOP_RESTFUL="1";
-options set=HADOOP_GATEWAY_URL="https://enchbcclpredgp01.srv.bmogc.net:8443/gateway/default";
+options set=HADOOP_GATEWAY_URL="https://enchbcclpredgp01.srv.gc.net:8443/gateway/default";
 options set=SAS_HADOOP_CONFIG_PATH="/opt/sas/hadoop/files/core-site.xml";
 options set=SAS_HADOOP_JAR_PATH="/opt/sas/hadoop/jars/lib";
 
