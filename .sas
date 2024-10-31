@@ -9,7 +9,7 @@ options set=SAS_HADOOP_JAR_PATH="/opt/sas/hadoop/jars/lib";
 
 %let hive_server=enchbcclpredgp01.srv.bmogc.net;
 %let hive_port=8443;
-%let hive_uri=https://enchbcclpredgp01.srv.bmogc.net:8443/;
+%let hive_uri=https://enchbcclpredgp01.srv.ogc.net:8443/;
 %let hive_transport_mode=http;
 %let hive_http_path=gateway/default/hive2;
 %let hive_schema=abx_pacb_arm_common_data;
