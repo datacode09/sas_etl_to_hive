@@ -5,13 +5,13 @@ run;
 /* Step 2: Build the Hive CREATE TABLE statement in parts and store in a dataset */
 data hive_query;
     /* Define the Hive schema, table name, and partition column */
-    length hive_create_query $1000; /* Adjust length as needed for larger queries */
+    length hive_create_query $4000; /* Set a high length for larger queries */
     %let hive_schema = your_schema;           /* Replace with your Hive schema name */
     %let hive_table = your_hive_table;        /* Replace with your Hive table name */
     %let partition_column = RPT_PRD_END_DT;   /* Replace with the desired partition column */
 
     /* Initialize the CREATE TABLE statement */
-    hive_create_query = "CREATE TABLE IF NOT EXISTS &hive_schema..&hive_table (";
+    hive_create_query = catx(' ', "CREATE TABLE IF NOT EXISTS", "&hive_schema..&hive_table", "(");
 
     /* Loop through each column and generate Hive-compatible column definitions */
     set schema_metadata end=last;
@@ -26,7 +26,7 @@ data hive_query;
     end;
     else if type = 2 then hive_type = "STRING"; /* Character type */
 
-    /* Append column definition */
+    /* Append column definition, ensuring partition column is handled separately */
     if name ne "&partition_column" then do;
         col_def = catx(' ', name, hive_type);
         hive_create_query = catx(', ', hive_create_query, col_def);
